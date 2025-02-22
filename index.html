@@ -17,14 +17,43 @@
             color: red;
             font-weight: bold;
         }
+        .game-container {
+            margin-top: 20px;
+        }
+        input, button {
+            margin: 10px;
+            padding: 8px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body onload="brython()">
     <h1>Treasure Hunt Game</h1>
-    <script type="text/python">
-from browser import document, html, prompt
+    <div id="game-output"></div>
+    <div class="game-container" id="game-container"></div>
 
-treasure = '''
+    <script type="text/python">
+from browser import document, html
+
+def show_message(message, is_red=False):
+    color_class = "red-text" if is_red else ""
+    document["game-output"] <= html.P(message, Class=color_class, escape=False)
+
+def ask_question(question, callback):
+    container = document["game-container"]
+    container.clear()
+    container <= html.P(question)
+    input_box = html.INPUT(type="text")
+    button = html.BUTTON("Submit")
+    container <= input_box + button
+
+    def on_submit(event):
+        answer = input_box.value.strip().lower()
+        callback(answer)
+    
+    button.bind("click", on_submit)
+
+treasure = """
 *******************************************************************************
           |                   |                  |                     |
  _________|________________.=""_;=.______________|_____________________|_______
@@ -39,50 +68,54 @@ treasure = '''
 |                   | |o ;    `"-.o`"=._``  '` " ,__.--o;   |
 |___________________|_| ;     (#) `-.o `"=.`_.--"_o.-; ;___|___________________
 ____/______/______/___|o;._    "      `".o|o_.--"    ;o;____/______/______/____
-/______/______/______/_"=._o--._        ; | ;        ; ;/______/______/______/_
-
+/______/______/______/"=._o--._        ; | ;        ; ;/______/______/______/_
 *******************************************************************************
-'''
+"""
 
-document <= html.P("🎯 <span class='red-text'>Meena ❤️</span>, Your mission is to find the hidden treasure.", escape=False)
-date = prompt("But first! What is our anniversary date? 27, 14, or 3")
+show_message("🎯 <span class='red-text'>Meena ❤️</span>, Your mission is to find the hidden treasure.", is_red=True)
 
-if date == "27":  # Change if the correct date is different
-    document <= html.P("Correct. <span class='red-text'>Love ❤️</span> you too...", escape=False)
-    document <= html.P("<span class='red-text'>Love ❤️</span>, You've got to make a few choices to get the treasure.", escape=False)
-    q1 = prompt("Before that. Do you love me? Yes or Yes").lower()
-
-    if q1 == "yes":
-        document <= html.P("<span class='red-text'>Love ❤️</span> you more", escape=False)
-        document <= html.P("Ok, you're on a path in an ancient jungle.")
-        choice1 = prompt("What do you choose? Left or Right").lower()
-
-        if choice1 == "left":
-            choice2 = prompt("There's a river in front. Wait for boat or Swim?").lower()
-
-            if choice2 == "wait":
-                document <= html.P("Great choice <span class='red-text'>Meena ❤️</span>, you are close to the treasure.", escape=False)
-                document <= html.P("You reached an ancient temple.")
-                choice3 = prompt("There are three doors: Yellow, Red, or Green. Make a choice.").lower()
-
-                if choice3 == "red":
-                    document <= html.P("Congratulations <span class='red-text'>Love ❤️</span>!", escape=False)
-                    document <= html.P(f"<pre>{treasure}</pre>")
-                    document <= html.P("Great job my beautiful <span class='red-text'>Sapna ❤️</span>!", escape=False)
-                elif choice3 == "yellow":
-                    document <= html.P("This room was full of FIRE. Game Over <span class='red-text'>Chubbo ❤️</span>!", escape=False)
-                elif choice3 == "green":
-                    document <= html.P("Green door led to a room full of snakes. Game Over <span class='red-text'>Love ❤️</span>!", escape=False)
-                else:
-                    document <= html.P("Invalid choice. Game Over!")
-            else:
-                document <= html.P("The river was full of crocodiles. Game Over <span class='red-text'>Love ❤️</span>!", escape=False)
-        else:
-            document <= html.P("Game Over <span class='red-text'>Love ❤️</span>! There was a lion on the right.", escape=False)
+def check_date(answer):
+    if answer == "28":
+        show_message("Correct. <span class='red-text'>Love ❤️</span> you too...", is_red=True)
+        ask_question("Before that. Do you love me? Yes or Yes", check_love)
     else:
-        document <= html.P("Wrong answer. You are kissed to death by your man. 💋")
-else:
-    document <= html.P("Shurup! You are sent to jail. Game Over!")
+        show_message("Shurup! You are sent to jail. Game Over!", is_red=True)
+
+def check_love(answer):
+    if answer == "yes":
+        show_message("<span class='red-text'>Love ❤️</span> you more", is_red=True)
+        show_message("Ok, you're on a path in an ancient jungle.")
+        ask_question("What do you choose? Left or Right", check_path)
+    else:
+        show_message("Wrong answer. You are kissed to death by your man. 💋", is_red=True)
+
+def check_path(answer):
+    if answer == "left":
+        ask_question("There's a river in front. Wait for boat or Swim?", check_river)
+    else:
+        show_message("Game Over <span class='red-text'>Love ❤️</span>! There was a lion on the right.", is_red=True)
+
+def check_river(answer):
+    if answer == "wait":
+        show_message("Great choice <span class='red-text'>Meena ❤️</span>, you are close to the treasure.", is_red=True)
+        show_message("You reached an ancient temple.")
+        ask_question("There are three doors: Yellow, Red, or Green. Make a choice.", check_doors)
+    else:
+        show_message("The river was full of crocodiles. Game Over <span class='red-text'>Love ❤️</span>!", is_red=True)
+
+def check_doors(answer):
+    if answer == "red":
+        show_message("Congratulations <span class='red-text'>Love ❤️</span>!", is_red=True)
+        show_message(f"<pre>{treasure}</pre>")
+        show_message("Great job my beautiful <span class='red-text'>Sapna ❤️</span>!", is_red=True)
+    elif answer == "yellow":
+        show_message("This room was full of FIRE. Game Over <span class='red-text'>Chubbo ❤️</span>!", is_red=True)
+    elif answer == "green":
+        show_message("Green door led to a room full of snakes. Game Over <span class='red-text'>Love ❤️</span>!", is_red=True)
+    else:
+        show_message("Invalid choice. Game Over!", is_red=True)
+
+ask_question("But first! What is our anniversary date? 27, 14, or 3", check_date)
     </script>
 </body>
 </html>
